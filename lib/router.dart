@@ -55,8 +55,11 @@ class Router extends RouterL3 {
 
     _appLifecycleListener = isAppLifecycleListenerEnabled
         ? AppLifecycleListener(
-            onPause: stop,
-            onRestart: start,
+            onStateChange: (state) async => switch (state) {
+              AppLifecycleState.paused => await stop(),
+              AppLifecycleState.resumed => await start(),
+              _ => null,
+            },
           )
         : null;
 
