@@ -1,14 +1,9 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'package:nsd/nsd.dart' as nsd;
+import 'package:nsd/nsd.dart';
 import 'package:flutter/foundation.dart';
-
-typedef OnServiceFoundCallback = void Function({
-  required Uint8List peerId,
-  required InternetAddress address,
-  int? port,
-});
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Mdns {
   Mdns({
@@ -21,71 +16,73 @@ class Mdns {
   final Duration timeout;
   final String serviceName;
   final String serviceType;
-  final OnServiceFoundCallback onPeerFound;
 
-  nsd.Registration? _registration;
-  nsd.Discovery? _discovery;
+  final void Function({
+    required Uint8List peerId,
+    required InternetAddress address,
+    int? port,
+  }) onPeerFound;
 
-  Future<void> register(Uint8List peerId, int port) async {
-    try {
-      _registration ??= await nsd
-          .register(
-            nsd.Service(
-              name: serviceName,
-              type: serviceType,
-              port: port,
-              txt: {
-                _txtPeerId: _utf8Encoder.convert(base64Encode(peerId)),
-              },
-            ),
-          )
-          .timeout(timeout);
-    } catch (e) {
-      if (kDebugMode) print(e);
+  Registration? _registration;
+  Discovery? _discovery;
+
+  Future<void> start(Uint8List peerId, int port) async {
+    if (await Connectivity().checkConnectivity() == ConnectivityResult.wifi) {
+      try {
+        _registration ??= await register(
+          Service(
+            name: serviceName,
+            type: serviceType,
+            port: port,
+            txt: {
+              _txtPeerId: _utf8Encoder.convert(base64Encode(peerId)),
+            },
+          ),
+        ).timeout(timeout);
+      } catch (e) {
+        if (kDebugMode) print(e);
+      }
+      try {
+        _discovery ??=
+            await startDiscovery(serviceType, ipLookupType: IpLookupType.any)
+                .timeout(timeout)
+              ..addServiceListener(_onServiceFound);
+      } catch (e) {
+        if (kDebugMode) print(e);
+      }
     }
   }
 
-  Future<void> unregister() async {
-    if (_registration == null) return;
-    final registration = _registration!;
-    _registration = null;
-    await nsd.unregister(registration);
-  }
-
-  Future<void> startDiscovery() async {
-    try {
-      _discovery ??= await nsd
-          .startDiscovery(serviceType, ipLookupType: nsd.IpLookupType.any)
-          .timeout(timeout)
-        ..addServiceListener(_onServiceFound);
-    } on TimeoutException catch (e) {
-      if (kDebugMode) print(e);
+  Future<void> stop() async {
+    if (_registration != null) {
+      try {
+        await unregister(_registration!);
+      } catch (e) {
+        if (kDebugMode) print(e);
+      } finally {
+        _registration = null;
+      }
+    }
+    if (_discovery != null) {
+      try {
+        await stopDiscovery(_discovery!);
+        _discovery?.dispose();
+      } catch (e) {
+        if (kDebugMode) print(e);
+      } finally {
+        _discovery = null;
+      }
     }
   }
 
-  Future<void> stopDiscovery() async {
-    if (_discovery == null) return;
-    final discovery = _discovery!;
-    _discovery = null;
-    try {
-      await nsd.stopDiscovery(discovery);
-      discovery.dispose();
-    } on TimeoutException catch (e) {
-      if (kDebugMode) print(e);
-    }
-  }
-
-  void _onServiceFound(
-    nsd.Service service,
-    nsd.ServiceStatus status,
-  ) {
+  void _onServiceFound(Service service, ServiceStatus status) {
     if (kDebugMode) print('mDNS $status: ${service.addresses}');
     if (service.type != serviceType) return;
 
     final peerIdBytes = service.txt?[_txtPeerId];
     if (peerIdBytes == null || peerIdBytes.isEmpty) return;
 
-    if (status == nsd.ServiceStatus.found) {
+    if (status == ServiceStatus.found) {
       for (final address in service.addresses!) {
         if (address.isLinkLocal || address.address.isEmpty) continue;
         onPeerFound(
