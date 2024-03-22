@@ -1,6 +1,6 @@
 name: p2plib_flutter
 description: "A Flutter package to easy use of p2plib with mDNS support"
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/alexandrim0/p2plib-flutter
 
 environment:

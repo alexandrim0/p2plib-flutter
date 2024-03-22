@@ -1,3 +1,9 @@
+## 0.1.1
+
+  - remove unnecessary check
+
+  - add debug output
+
 ## 0.1.0
 
   - remove lifecycle and connectivity listeners

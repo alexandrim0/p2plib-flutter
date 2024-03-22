@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:p2plib/p2plib.dart';
+import 'package:flutter/foundation.dart';
 
 import 'mdns.dart';
 
@@ -40,19 +41,16 @@ class Router extends RouterL3 {
 
   late final Mdns? _mdns;
 
-  bool _isStarted = false;
-
-  Timer? timer;
+  Timer? _timer;
 
   @override
   Future<void> start({int? port}) async {
-    if (_isStarted) return;
-    if (timer?.isActive ?? false) timer?.cancel();
-    timer = Timer(
+    if (_timer?.isActive ?? false) _timer?.cancel();
+    _timer = Timer(
       debounceInterval,
       () async {
         await super.start(port: port ?? this.port);
-        _isStarted = true;
+        if (kDebugMode) print('P2P network started!');
         await _mdns?.start(selfId.value, port ?? this.port);
       },
     );
@@ -60,12 +58,12 @@ class Router extends RouterL3 {
 
   @override
   Future<void> stop() async {
-    if (!_isStarted) return;
-    if (timer?.isActive ?? false) timer?.cancel();
-    timer = Timer(
+    if (_timer?.isActive ?? false) _timer?.cancel();
+    _timer = Timer(
       debounceInterval,
       () async {
         super.stop();
+        if (kDebugMode) print('P2P network stopped!');
         await _mdns?.stop();
       },
     );
