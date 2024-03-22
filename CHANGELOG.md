@@ -1,3 +1,9 @@
+## 0.1.2
+
+  - upgrade p2plib
+
+  - add default logger
+
 ## 0.1.1
 
   - remove unnecessary check

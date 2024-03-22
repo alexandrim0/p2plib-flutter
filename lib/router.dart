@@ -9,6 +9,7 @@ class Router extends RouterL3 {
   Router({
     this.port = TransportUdp.defaultPort,
     this.debounceInterval = const Duration(seconds: 1),
+    super.logger = kDebugMode ? print : null,
   }) : _mdns = null;
 
   Router.mdns({
@@ -17,6 +18,7 @@ class Router extends RouterL3 {
     this.port = TransportUdp.defaultPort,
     this.debounceInterval = const Duration(seconds: 1),
     Duration mdnsTimeout = const Duration(seconds: 5),
+    super.logger = kDebugMode ? print : null,
   }) {
     _mdns = Mdns(
       serviceName: serviceName,
