@@ -27,7 +27,8 @@ class Mdns {
   Discovery? _discovery;
 
   Future<void> start(Uint8List peerId, int port) async {
-    if (await Connectivity().checkConnectivity() == ConnectivityResult.wifi) {
+    if ((await Connectivity().checkConnectivity())
+        .contains(ConnectivityResult.wifi)) {
       try {
         _registration ??= await register(
           Service(
