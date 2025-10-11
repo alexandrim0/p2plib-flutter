@@ -21,14 +21,16 @@ class Mdns {
     required Uint8List peerId,
     required InternetAddress address,
     int? port,
-  }) onPeerFound;
+  })
+  onPeerFound;
 
   Registration? _registration;
   Discovery? _discovery;
 
   Future<void> start(Uint8List peerId, int port) async {
-    if ((await Connectivity().checkConnectivity())
-        .contains(ConnectivityResult.wifi)) {
+    if ((await Connectivity().checkConnectivity()).contains(
+      ConnectivityResult.wifi,
+    )) {
       try {
         _registration ??= await register(
           Service(
@@ -40,15 +42,17 @@ class Mdns {
             },
           ),
         ).timeout(timeout);
-      } catch (e) {
+      } on Object catch (e) {
         if (kDebugMode) print(e);
       }
       try {
         _discovery ??=
-            await startDiscovery(serviceType, ipLookupType: IpLookupType.any)
-                .timeout(timeout)
+            await startDiscovery(
+                serviceType,
+                ipLookupType: IpLookupType.any,
+              ).timeout(timeout)
               ..addServiceListener(_onServiceFound);
-      } catch (e) {
+      } on Object catch (e) {
         if (kDebugMode) print(e);
       }
     }
@@ -58,7 +62,7 @@ class Mdns {
     if (_registration != null) {
       try {
         await unregister(_registration!);
-      } catch (e) {
+      } on Object catch (e) {
         if (kDebugMode) print(e);
       } finally {
         _registration = null;
@@ -68,7 +72,7 @@ class Mdns {
       try {
         await stopDiscovery(_discovery!);
         _discovery?.dispose();
-      } catch (e) {
+      } on Object catch (e) {
         if (kDebugMode) print(e);
       } finally {
         _discovery = null;

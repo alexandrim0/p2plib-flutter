@@ -1,3 +1,9 @@
+## 0.2.0
+
+  - upgrade sdk
+
+  - upgrade packages
+
 ## 0.1.2
 
   - upgrade p2plib
